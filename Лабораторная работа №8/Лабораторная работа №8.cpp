@@ -22,53 +22,128 @@ void instruction() {
 	cout << "0 - завершение работы программы\n\n";
 }
 
+template <typename T>
 struct Node {
-	int param = 0;
-	Node* left = nullptr;
-	Node* right = nullptr;
-	Node* up = nullptr;
+	T info;
+	Node* next = nullptr;
+	Node* prev = nullptr;
 };
+template <typename T>
+struct List {
+	int counting = 0;
+	int position = 0;
+	Node<T>* now = nullptr;
+	Node<T>* first = nullptr;
+	Node<T>* last = nullptr;
+
+	void toIndex(int index) {
+		if (abs(index - position) > (counting - 1 - index)) {
+			now = last;
+			position = counting - 1;
+		}
+		if (abs(index - position) > index) {
+			now = first;
+			position = 0;
+		}
+		if (index > position) { for (int i = 0; i < index - position; i++) { now = now->next; } }
+		else { for (int i = 0; i < position - index; i++) { now = now->prev; } }
+		position = index;
+	}
+
+	void add(T info) {
+		Node<T>* node = new Node<T>();
+		node->info = info;
+		if (counting == 0) {
+			first = node;
+			last = node;
+			now = node;
+		}
+		else {
+			node->prev = last;
+			last->next = node;
+			last = node;
+		}
+		counting++;
+	}
+
+	void insert(int index, T info) {
+		if (index < 0 || index > counting) { throw 0; }
+		if (index == counting) {
+			add(info);
+			return;
+		}
+		toIndex(index);
+		Node<T>* node = new Node<T>();
+		node->info = info;
+		node->prev = now->prev;
+		now->prev = node;
+		node->next = now;
+		if (node->prev != nullptr) { node->prev->next = node; }
+		else { first = node; }
+		counting++;
+		position++;
+	}
+
+	void removeAt(int index) {
+		if (index < 0 || index >= counting) { throw 0; }
+		toIndex(index);
+		Node<T>* del = now;
+		if (last == first) {
+			clear();
+			return;
+		}
+		if (del == last) {
+			last = last->prev;
+			last->next = nullptr;
+			now = last;
+			position--;
+		}
+		else if (del == first) {
+			first = first->next;
+			first->prev = nullptr;
+			now = first;
+		}
+		else {
+			now = now->next;
+			del->next->prev = del->prev;
+			del->prev->next = del->next;
+		}
+		delete del;
+		counting--;
+	}
+
+	T elementAt(int index) {
+		if (index < 0 || index >= counting) { throw 0; }
+		toIndex(index);
+		return now->info;
+	}
+
+	int count() { return counting; }
+
+	void clear() {
+		int kol = counting;
+		for (int i = 0; i < kol; i++) {
+			Node<T>* del = first;
+			first = first->next;
+			delete del;
+		}
+		last = nullptr;
+		now = nullptr;
+		position = 0;
+		counting = 0;
+	}
+};
+
 struct Tree {
+	struct Node {
+		int param = 0;
+		Node* left = nullptr;
+		Node* right = nullptr;
+		Node* up = nullptr;
+	};
 	int counting = 0;
 	Node* root = nullptr;
 	enum Order { Prefix, Infix, Postfix, LevelsUpLeft, LevelsUpRight, LevelsDownLeft, LevelsDownRight };
-
-	struct NodeQ {
-		Node* value = nullptr;
-		NodeQ* next = nullptr;
-	};
-	struct Queue {
-		NodeQ* first = nullptr;
-		NodeQ* last = nullptr;
-		int counting = 0;
-
-		void queue(Node* Node) {
-			NodeQ* newNode = new NodeQ();
-			newNode->value = Node;
-			if (counting == 0) {
-				first = newNode;
-				last = newNode;
-			}
-			else {
-				last->next = newNode;
-				last = newNode;
-			}
-			counting++;
-		}
-		NodeQ* unqueue() {
-			if (counting > 0) {
-				NodeQ* answer = first;
-				NodeQ* newNode = first->next;
-				delete first;
-				first = newNode;
-				counting--;
-				return answer;
-			}
-			else { return nullptr; }
-		}
-		NodeQ* elementAt() { return first; }
-		int count() { return counting; }
-	};
 
 	void Balance(Node* node = nullptr) {
 		if (node == nullptr) { node = root; }
@@ -154,24 +229,24 @@ struct Tree {
 	int* ToLevels(Order order) {
 		int index = 0;
 		int* arr = new int[counting];
-		Queue queue;
-		queue.queue(root);
+		List<Node*> list;
+		list.add(root);
 		while (index != counting) {
-			for (int i = queue.count(); i > 0; i--) {
+			for (int i = list.count(); i > 0; i--) {
 				if (order == LevelsUpLeft || order == LevelsDownRight)
-					if (queue.elementAt()->value->left != nullptr) {
-						queue.queue(queue.elementAt()->value->left);
+					if (list.elementAt(0)->left != nullptr) {
+						list.add(list.elementAt(0)->left);
 					}
-				if (queue.elementAt()->value->right != nullptr) {
-					queue.queue(queue.elementAt()->value->right);
+				if (list.elementAt(0)->right != nullptr) {
+					list.add(list.elementAt(0)->right);
 				}
 				if (order == LevelsUpRight || order == LevelsDownLeft) {
-					if (queue.elementAt()->value->left != nullptr) {
-						queue.queue(queue.elementAt()->value->left);
+					if (list.elementAt(0)->left != nullptr) {
+						list.add(list.elementAt(0)->left);
 					}
 				}
-				arr[index] = queue.elementAt()->value->param;
-				queue.unqueue();
+				arr[index] = list.elementAt(0)->param;
+				list.removeAt(0);
 				index++;
 			}
 		}
