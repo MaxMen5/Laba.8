@@ -55,17 +55,18 @@ struct Tree {
 			}
 			counting++;
 		}
-		int unqueue() {
+		NodeQ* unqueue() {
 			if (counting > 0) {
+				NodeQ* answer = first;
 				NodeQ* newNode = first->next;
-				int value = first->value->param;
 				delete first;
 				first = newNode;
 				counting--;
-				return value;
+				return answer;
 			}
-			else { return 0; }
+			else { return nullptr; }
 		}
+		NodeQ* elementAt() { return first; }
 		int count() { return counting; }
 	};
 
@@ -158,18 +159,19 @@ struct Tree {
 		while (index != counting) {
 			for (int i = queue.count(); i > 0; i--) {
 				if (order == LevelsUpLeft || order == LevelsDownRight)
-					if (queue.first->value->left != nullptr) {
-						queue.queue(queue.first->value->left);
+					if (queue.elementAt()->value->left != nullptr) {
+						queue.queue(queue.elementAt()->value->left);
 					}
-				if (queue.first->value->right != nullptr) {
-					queue.queue(queue.first->value->right);
+				if (queue.elementAt()->value->right != nullptr) {
+					queue.queue(queue.elementAt()->value->right);
 				}
 				if (order == LevelsUpRight || order == LevelsDownLeft) {
-					if (queue.first->value->left != nullptr) {
-						queue.queue(queue.first->value->left);
+					if (queue.elementAt()->value->left != nullptr) {
+						queue.queue(queue.elementAt()->value->left);
 					}
 				}
-				arr[index] = queue.unqueue();
+				arr[index] = queue.elementAt()->value->param;
+				queue.unqueue();
 				index++;
 			}
 		}
